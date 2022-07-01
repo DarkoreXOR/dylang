@@ -4,11 +4,13 @@ use crate::token::Token;
 pub enum BinaryOperator {
     Plus,
     Minus,
+    Multiply,
+    Divide,
 }
 
 #[derive(Debug)]
 pub enum Expression {
-    BinaryOp(BinaryOperator, Box<Expression>, Box<Expression>),
+    Binary(BinaryOperator, Box<Expression>, Box<Expression>),
     Integer(i64),
 }
 
@@ -24,12 +26,12 @@ pub enum Statement {
 } */
 
 pub struct Parser<'a> {
-    tokens: &'a Vec<Token>,
+    tokens: &'a [Token],
     offset: usize,
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(tokens: &'a Vec<Token>) -> Self {
+    pub fn new(tokens: &'a [Token]) -> Self {
         Self {
             tokens,
             offset: 0,
@@ -51,65 +53,61 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_addition(&mut self) -> Result<Box<Expression>, ()> {
-        let mut expr = self
-            .parse_primary()
-            .unwrap();
+        let mut expression = self.parse_multiplication()?;
 
         loop {
-            if let Token::Plus = self.peek() {
-                self.next();
+            let binary_operator = match self.peek() {
+                Some(Token::Plus) => BinaryOperator::Plus,
+                Some(Token::Minus) => BinaryOperator::Minus,
 
-                let right_expr = self
-                    .parse_primary()
-                    .unwrap();
+                _ => break,
+            };
 
-                expr = Box::new(
-                    Expression::BinaryOp(
-                        BinaryOperator::Plus,
-                        expr,
-                        right_expr
-                    )
-                );
+            self.next();
 
-                continue;
-            }
+            let right_expression = self.parse_multiplication()?;
 
-            if let Token::Minus = self.peek() {
-                self.next();
-
-                let right_expr = self
-                    .parse_primary()
-                    .unwrap();
-
-                expr = Box::new(
-                    Expression::BinaryOp(
-                        BinaryOperator::Minus,
-                        expr,
-                        right_expr
-                    )
-                );
-
-                continue;
-            }
-
-            break;
+            expression = Box::new(Expression::Binary(binary_operator, expression, right_expression));
         }
         
-        Ok(expr)
+        Ok(expression)
+    }
+
+    fn parse_multiplication(&mut self) -> Result<Box<Expression>, ()> {
+        let mut expression = self.parse_unary()?;
+
+        loop {
+            let binary_operator = match self.peek() {
+                Some(Token::Star) => BinaryOperator::Multiply,
+                Some(Token::Slash) => BinaryOperator::Divide,
+
+                _ => break,
+            };
+
+            self.next();
+
+            let right_expression = self.parse_unary()?;
+
+            expression = Box::new(Expression::Binary(binary_operator, expression, right_expression));
+        }
+        
+        Ok(expression)
+    }
+
+    fn parse_unary(&mut self) -> Result<Box<Expression>, ()> {
+        self.parse_primary()
     }
 
     fn parse_primary(&mut self) -> Result<Box<Expression>, ()> {
-        let token = self.peek();
-
-        if token != Token::EOF {
-            self.next();
-
+        if let Some(token) = self.peek() {
             let expression = match token {
-                Token::NumberLiteral(n) => Expression::Integer(n),
+                Token::NumberLiteral(n) => Expression::Integer(*n),
 
                 //
                 _ => unreachable!(),
             };
+            
+            self.next();
 
             return Ok(Box::new(expression));
         }
@@ -117,11 +115,11 @@ impl<'a> Parser<'a> {
         Err(())
     }
 
-    fn peek(&self) -> Token {
+    fn peek(&self) -> Option<&Token> {
         if self.offset < self.tokens.len() {
-            self.tokens[self.offset].clone()
+            Some(&self.tokens[self.offset])
         } else {
-            Token::EOF
+            None
         }
     }
 

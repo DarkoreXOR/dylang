@@ -1,5 +1,3 @@
-use std::borrow::Borrow;
-
 use crate::token::Token;
 
 pub struct Lexer {
@@ -21,43 +19,46 @@ impl Lexer {
         self.tokens.push(token);
     }
 
-    pub fn tokenize(&mut self) -> &Vec<Token> {
+    pub fn tokenize(&mut self) -> &[Token] {
         self.source_offset = 0;
         self.tokens.clear();
 
         while let Some(current_character) = self.peek() {
-            match current_character {
-                ch if ch.is_whitespace() => self.next(),
+            let token_opt = match current_character {
+                ch if ch.is_whitespace() => {
+                    self.next();
+                    None
+                },
 
                 ch if ch.is_alphabetic() || ch == '_' => {
-                    let token = self.tokenize_identifier();
-                    self.add_token(token);
+                    Some(self.tokenize_identifier())
                 }
 
                 ch if ch == '"' => {
-                    let token = self.tokenize_string_literal();
-                    self.add_token(token);
+                    Some(self.tokenize_string_literal())
                 }
 
                 ch if ch.is_digit(10) => {
-                    let token = self.tokenize_number_literal();
-                    self.add_token(token);
+                    Some(self.tokenize_number_literal())
                 }
 
-                '+' | '-' | '=' | '(' | ')' | '{' | '}' | ',' | ':' | ';' => {
-                    let token = self.tokenize_single_character();
-                    self.add_token(token);
+                ch if "+-*/=(){},:;".contains(ch) => {
+                    Some(self.tokenize_single_character())
                 }
 
                 ch => {
                     println!("skip unknown character: `{}`", ch);
                     self.next();
+                    None
                 }
+            };
+
+            if let Some(token) = token_opt {
+                self.add_token(token);
             }
         }
 
-        self.tokens.push(Token::EOF);
-        self.tokens.borrow()
+        &self.tokens
     }
 
     fn tokenize_identifier(&mut self) -> Token {
@@ -125,6 +126,8 @@ impl Lexer {
         match self.peek_and_next().unwrap() {
             '+' => Token::Plus,
             '-' => Token::Minus,
+            '*' => Token::Star,
+            '/' => Token::Slash,
             '=' => Token::Equal,
             '(' => Token::LParen,
             ')' => Token::RParen,
