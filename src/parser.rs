@@ -9,8 +9,15 @@ pub enum BinaryOperator {
 }
 
 #[derive(Debug)]
+pub enum UnaryOperator {
+    Plus,
+    Minus,
+}
+
+#[derive(Debug)]
 pub enum Expression {
     Binary(BinaryOperator, Box<Expression>, Box<Expression>),
+    Unary(UnaryOperator, Box<Expression>),
     Integer(i64),
 }
 
@@ -95,7 +102,19 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_unary(&mut self) -> Result<Box<Expression>, ()> {
-        self.parse_primary()
+        let unary_operator_opt = match self.peek() {
+            Some(Token::Minus) => Some(UnaryOperator::Minus),
+            Some(Token::Plus) => Some(UnaryOperator::Plus),
+            _ => None,
+        };
+
+        if let Some(unary_operator) = unary_operator_opt {
+            self.next();
+            let expression = self.parse_unary()?;
+            Ok(Box::new(Expression::Unary(unary_operator, expression)))
+        } else {
+            self.parse_primary()
+        }
     }
 
     fn parse_primary(&mut self) -> Result<Box<Expression>, ()> {
