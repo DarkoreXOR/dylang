@@ -1,10 +1,10 @@
-use crate::x86::register::Register;
-use crate::x86::operand::Operand;
-use crate::x86::memory::Scale;
-use crate::x86::register::GPReg32;
-use crate::x86::memory::Memory;
-use crate::x86::immediate::Immediate;
-use crate::codegen::Codegen;
+use crate::x86::core::register::Register;
+use crate::x86::core::operand::Operand;
+use crate::x86::core::memory::Scale;
+use crate::x86::core::register::GPReg32;
+use crate::x86::core::memory::Memory;
+use crate::x86::core::immediate::Immediate;
+use crate::x86::codegen::Codegen;
 
 pub struct ExeWriter {
 
