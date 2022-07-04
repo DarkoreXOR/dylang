@@ -157,7 +157,8 @@ pub fn register_to_rm(register: Register) -> Rm {
             GPReg8::CH => Rm::CH,
             GPReg8::DH => Rm::DH,
             GPReg8::BH => Rm::BH,
-        },
+        }
+        
         Register::GPR16(reg) => match reg {
             GPReg16::AX => Rm::AX,
             GPReg16::CX => Rm::CX,
@@ -167,7 +168,8 @@ pub fn register_to_rm(register: Register) -> Rm {
             GPReg16::BP => Rm::BP,
             GPReg16::SI => Rm::SI,
             GPReg16::DI => Rm::DI,
-        },
+        }
+
         Register::GPR32(reg) => match reg {
             GPReg32::EAX => Rm::EAX,
             GPReg32::ECX => Rm::ECX,
@@ -177,7 +179,8 @@ pub fn register_to_rm(register: Register) -> Rm {
             GPReg32::EBP => Rm::EBP,
             GPReg32::ESI => Rm::ESI,
             GPReg32::EDI => Rm::EDI,
-        },
+        }
+
         Register::SegR(reg) => unimplemented!(),
     }
 }

@@ -1,13 +1,12 @@
-mod token;
-mod lexer;
 mod parser;
 mod exe_writer;
 mod x86;
 
 use std::{fs::File, io::Read};
 use exe_writer::ExeWriter;
-use lexer::Lexer;
-use parser::Parser;
+use parser::{lexer::Lexer, parser::Parser};
+
+use parser::ast_visitor::DefaultAstVisitor;
 
 fn main() {
     let mut writer = ExeWriter::new();
@@ -15,11 +14,11 @@ fn main() {
     writer.write();
 
     let mut code = String::new();    
-    let mut file = File::open("test.dl").unwrap();
+    let mut file = File::open("examples/test.dl").unwrap();
 
     file.read_to_string(&mut code).unwrap();
 
-    let mut lexer = Lexer::new(code.into());
+    let mut lexer = Lexer::new(code);
     let tokens = lexer.tokenize();
 
     for token in tokens.iter() {
@@ -29,7 +28,14 @@ fn main() {
     println!();
 
     let mut parser = Parser::new(tokens);
-    let ast = parser.parse();
+    let parse_result = parser.parse();
+    let ref mut ast = parse_result.unwrap();
 
-    println!("{:?}", ast.unwrap());
+    println!("{:?}", ast);
+
+    // ast visitor
+
+    let ast_visitor = DefaultAstVisitor::<(), ()>::new();
+
+    ast.accept(ast_visitor).unwrap();
 }
