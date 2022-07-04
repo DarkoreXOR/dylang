@@ -9,5 +9,5 @@ edition = "2021"
 
 
 [dependencies.object]
-version = "0.28.4"
+version = "0.29.0"
 features = ["read_core", "write_core", "elf", "pe"]
