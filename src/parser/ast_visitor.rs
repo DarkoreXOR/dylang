@@ -16,6 +16,12 @@ pub trait AstVisitor {
         expression: &Expression,
     ) -> Result<Self::Value, Self::Error>;
 
+    fn visit_let_statement(
+        &mut self,
+        name: &str,
+        expression: Option<&Expression>,
+    ) -> Result<Self::Value, Self::Error>;
+
     fn visit_expression(
         &mut self,
         expression: &Expression
@@ -64,7 +70,13 @@ where
         statement: &Statement,
     ) -> Result<V, E> {
         match statement {
-            Statement::Expression(expression) => self.visit_expression(expression),
+            Statement::Expression(expression) => {
+                self.visit_expression(expression)
+            }
+
+            Statement::Let { name, expression } => {
+                self.visit_let_statement(name.as_str(), expression.as_ref())
+            }
         }
     }
 
@@ -73,6 +85,18 @@ where
         expression: &Expression,
     ) -> Result<V, E> {
         self.visit_expression(expression)?;
+        Ok(Default::default())
+    }
+
+    fn visit_let_statement(
+        &mut self,
+        _name: &str,
+        expression: Option<&Expression>,
+    ) -> Result<V, E> {
+        if let Some(expr) = expression {
+            self.visit_expression(expr)?;
+        }
+
         Ok(Default::default())
     }
 

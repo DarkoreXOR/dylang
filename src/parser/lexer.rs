@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use super::token::Token;
 
 pub struct Lexer {
@@ -28,7 +29,7 @@ impl Lexer {
                 ch if ch.is_whitespace() => {
                     self.next();
                     None
-                },
+                }
 
                 ch if ch.is_alphabetic() || ch == '_' => {
                     Some(self.tokenize_identifier())
@@ -42,14 +43,16 @@ impl Lexer {
                     Some(self.tokenize_number_literal())
                 }
 
-                ch if "+-*/=(){},:;".contains(ch) => {
-                    Some(self.tokenize_single_character())
-                }
-
-                ch => {
-                    println!("skip unknown character: `{}`", ch);
-                    self.next();
-                    None
+                ch => match Self::single_character_to_token(ch) {
+                    Some(token) => {
+                        self.next();
+                        Some(token)
+                    }
+                    None => {
+                        println!("skip unknown character: `{}`", ch);
+                        self.next();
+                        None
+                    }
                 }
             };
 
@@ -63,23 +66,20 @@ impl Lexer {
 
     fn tokenize_identifier(&mut self) -> Token {
         let mut identifier_builder = String::new();
-        let mut first = true;
+        let mut first_iteration = true;
         
         while let Some(current_char) = self.peek() {
-            let is_first_char_valid = current_char.is_alphabetic() ||
-                current_char == '_';
-            
-            let is_tail_char_valid = is_first_char_valid ||
-                current_char.is_digit(10);
+            let valid_first_char = current_char.is_alphabetic() || current_char == '_';
+            let valid_tail_char = valid_first_char || current_char.is_digit(10);
 
-            if first {
-                first = false;
+            if first_iteration {
+                first_iteration = false;
 
-                if !is_first_char_valid {
+                if !valid_first_char {
                     break;
                 }
             } else {
-                if !is_tail_char_valid {
+                if !valid_tail_char {
                     break;
                 }
             }
@@ -122,26 +122,6 @@ impl Lexer {
         Token::NumberLiteral(parsed_number)
     }
 
-    fn tokenize_single_character(&mut self) -> Token {
-        match self.peek_and_next().unwrap() {
-            '+' => Token::Plus,
-            '-' => Token::Minus,
-            '*' => Token::Star,
-            '/' => Token::Slash,
-            '=' => Token::Equal,
-            '(' => Token::LParen,
-            ')' => Token::RParen,
-            '{' => Token::LBrace,
-            '}' => Token::RBrace,
-            ',' => Token::Comma,
-            ':' => Token::Colon,
-            ';' => Token::Semicolon,
-
-            //
-            _ => unreachable!(),
-        }
-    }
-
     fn next(&mut self) {
         self.source_offset += 1;
     }
@@ -154,6 +134,7 @@ impl Lexer {
         }
     }
 
+    #[allow(unused)]
     fn peek_and_next(&mut self) -> Option<char> {
         let result = self.peek();
         self.next();
@@ -171,5 +152,23 @@ impl Lexer {
         }
         
         None
+    }
+
+    const fn single_character_to_token(character: char) -> Option<Token> {
+        match character {
+            '+' => Some(Token::Plus),
+            '-' => Some(Token::Minus),
+            '*' => Some(Token::Star),
+            '/' => Some(Token::Slash),
+            '=' => Some(Token::Equal),
+            '(' => Some(Token::LParen),
+            ')' => Some(Token::RParen),
+            '{' => Some(Token::LBrace),
+            '}' => Some(Token::RBrace),
+            ',' => Some(Token::Comma),
+            ':' => Some(Token::Colon),
+            ';' => Some(Token::Semicolon),
+            _ => None,
+        }
     }
 }

@@ -1,3 +1,4 @@
+use super::keyword::Keyword;
 use super::token::Token;
 use super::statement::Statement;
 use super::expression::{Expression, BinaryOperator, UnaryOperator};
@@ -27,6 +28,36 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_statement(&mut self) -> Result<Statement, ()> {
+
+        if let Some(Keyword::Let) = self.parse_keyword() {
+            let variable_name = if let Some(Token::Identifier(variable_name)) = self.peek() {
+                let result = variable_name.to_owned();
+                self.next();
+                result
+            } else {
+                return Err(())
+            };
+
+            if let Some(Token::Equal) = self.peek() {
+                self.next();
+            } else {
+                return Err(());
+            }
+
+            let expression = self.parse_expression()?;
+
+            if let Some(Token::Semicolon) = self.peek() {
+                self.next();
+            } else {
+                return Err(());
+            }
+
+            return Ok(Statement::Let {
+                name: variable_name,
+                expression: Some(*expression),
+            });
+        }
+
         let expression = self.parse_expression()?;
 
         Ok(Statement::Expression(*expression))
@@ -121,6 +152,23 @@ impl<'a> Parser<'a> {
 
     fn next(&mut self) {
         self.offset += 1;
+    }
+
+    fn parse_keyword(&mut self) -> Option<Keyword> {
+        if let Some(Token::Identifier(identifier)) = self.peek() {
+            let result = match identifier.as_str() {
+                "let" => Some(Keyword::Let),
+                _ => None,
+            };
+
+            if result.is_some() {
+                self.next();
+            }
+
+            return result;
+        }
+        
+        None
     }
 }
 

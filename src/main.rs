@@ -14,7 +14,7 @@ fn main() {
     writer.write();
 
     let mut code = String::new();    
-    let mut file = File::open("examples/test.dl").unwrap();
+    let mut file = File::open("examples/let_statement.dl").unwrap();
 
     file.read_to_string(&mut code).unwrap();
 
